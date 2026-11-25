@@ -1,0 +1,1 @@
+﻿{"extends":"./tsconfig.json","include":["src/views/mall/promotion/diy/**/*","src/components/DiyEditor/**/*","types/**/*.d.ts","src/types/**/*.d.ts"],"compilerOptions":{"incremental":false}}
