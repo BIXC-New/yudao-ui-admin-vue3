@@ -2,6 +2,7 @@ import { DiyComponent } from '@/components/DiyEditor/util'
 
 /** 页面设置属性 */
 export interface PageConfigProperty {
+  theme?: string
   // 页面描述
   description: string
   // 页面背景颜色

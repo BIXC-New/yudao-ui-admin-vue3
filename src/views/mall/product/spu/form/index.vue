@@ -1,5 +1,45 @@
 <template>
   <ContentWrap v-loading="formLoading">
+    <el-card v-if="!isDetail" class="mb-16px" shadow="never">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <span class="font-bold">第三方商品引入（1688 / 网页爬虫）</span>
+          <span class="text-12px text-gray-500">
+            选择已配置的平台并输入商品链接或 ID，可一键抓取并回填到下方表单
+          </span>
+        </div>
+      </template>
+      <div class="flex flex-wrap items-center gap-12px">
+        <el-select
+          v-model="importForm.platformId"
+          class="!w-240px"
+          clearable
+          placeholder="请选择货源平台配置"
+        >
+          <el-option
+            v-for="item in platformList"
+            :key="item.id"
+            :label="`${item.name}（${item.fetchMode === 1 ? 'API' : '爬虫'}）`"
+            :value="item.id"
+          />
+        </el-select>
+        <el-input
+          v-model="importForm.sourceUrl"
+          class="!w-380px"
+          clearable
+          placeholder="请输入第三方商品链接（如 1688 商品 URL）或商品 ID"
+        />
+        <el-checkbox v-model="importForm.downloadImages">自动转存图片</el-checkbox>
+        <el-button
+          v-hasPermi="['product:spu:import', 'product:spu:create']"
+          :loading="importLoading"
+          type="primary"
+          @click="handleImportPreview"
+        >
+          采集并填充
+        </el-button>
+      </div>
+    </el-card>
     <el-tabs v-model="activeName">
       <el-tab-pane label="基础设置" name="info">
         <InfoForm
@@ -56,6 +96,7 @@
 import { cloneDeep } from 'lodash-es'
 import { useTagsViewStore } from '@/store/modules/tagsView'
 import * as ProductSpuApi from '@/api/mall/product/spu'
+import * as SourcePlatformApi from '@/api/mall/product/sourcePlatform'
 import InfoForm from './InfoForm.vue'
 import DescriptionForm from './DescriptionForm.vue'
 import OtherForm from './OtherForm.vue'
@@ -73,6 +114,13 @@ const { params, name } = useRoute() // 查询参数
 const { delView } = useTagsViewStore() // 视图操作
 
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
+const importLoading = ref(false) // 第三方采集加载中
+const platformList = ref<SourcePlatformApi.SourcePlatformSimpleVO[]>([]) // 启用的平台配置
+const importForm = reactive({
+  platformId: undefined as number | undefined,
+  sourceUrl: '',
+  downloadImages: false
+})
 const activeName = ref('info') // Tag 激活的窗口
 const isDetail = ref(false) // 是否查看详情
 const infoRef = ref() // 商品信息 Ref
@@ -111,8 +159,66 @@ const formData = ref<ProductSpuApi.Spu>({
   description: '', // 商品详情
   sort: 0, // 商品排序
   giveIntegral: 0, // 赠送积分
-  virtualSalesCount: 0 // 虚拟销量
+  virtualSalesCount: 0, // 虚拟销量
+  sourceType: 0, // 商品来源类型：0=自有，1=第三方
+  sourcePlatformId: undefined,
+  sourcePlatformCode: '',
+  sourceProductId: '',
+  sourceUrl: ''
 })
+
+/** 从第三方平台采集并回填表单 */
+const handleImportPreview = async () => {
+  if (!importForm.platformId) {
+    message.warning('请先选择第三方平台配置')
+    return
+  }
+  if (!importForm.sourceUrl?.trim()) {
+    message.warning('请输入第三方商品 URL 或商品 ID')
+    return
+  }
+  importLoading.value = true
+  try {
+    const res = await ProductSpuApi.importPreviewSpu({
+      platformId: importForm.platformId,
+      sourceUrl: importForm.sourceUrl.trim(),
+      downloadImages: importForm.downloadImages
+    })
+    const convertedSkus = (res.skus || []).map((item) => ({
+      ...item,
+      price: formatToFraction(item.price || 0),
+      marketPrice: formatToFraction(item.marketPrice || 0),
+      costPrice: formatToFraction(item.costPrice || 0),
+      firstBrokeragePrice: formatToFraction(item.firstBrokeragePrice || 0),
+      secondBrokeragePrice: formatToFraction(item.secondBrokeragePrice || 0)
+    }))
+    formData.value = {
+      ...formData.value,
+      sourceType: res.sourceType ?? 1,
+      sourcePlatformId: res.sourcePlatformId,
+      sourcePlatformCode: res.sourcePlatformCode,
+      sourceProductId: res.sourceProductId,
+      sourceUrl: res.sourceUrl,
+      name: res.name || formData.value.name,
+      keyword: res.keyword || formData.value.keyword,
+      introduction: res.introduction || formData.value.introduction,
+      description: res.description || formData.value.description,
+      picUrl: res.picUrl || formData.value.picUrl,
+      sliderPicUrls: res.sliderPicUrls?.length ? res.sliderPicUrls : formData.value.sliderPicUrls,
+      specType: Boolean(res.specType),
+      skus: convertedSkus.length ? convertedSkus : formData.value.skus
+    }
+    if (res.duplicateSpuId) {
+      message.warning(
+        `采集成功！注意：系统已存在同来源商品「${res.duplicateSpuName}」(编号 ${res.duplicateSpuId})，请注意核对避免重复上架`
+      )
+    } else {
+      message.success('采集成功并已填充表单，请核对商品分类、品牌和销售价格后保存')
+    }
+  } finally {
+    importLoading.value = false
+  }
+}
 
 /** 获得详情 */
 const getDetail = async () => {
@@ -206,6 +312,9 @@ const close = () => {
 
 /** 初始化 */
 onMounted(async () => {
+  if (!isDetail.value) {
+    platformList.value = await SourcePlatformApi.getSimpleSourcePlatformList()
+  }
   await getDetail()
 })
 </script>

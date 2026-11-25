@@ -1,5 +1,9 @@
 <template>
-  <el-container class="editor">
+  <el-container
+    class="editor"
+    :class="{ 'shop-theme-preview': previewFollowsTheme }"
+    :style="previewThemeStyles"
+  >
     <!-- 顶部：工具栏 -->
     <el-header class="editor-header">
       <!-- 左侧操作区 -->
@@ -42,7 +46,7 @@
           <ComponentContainer
             v-if="showNavigationBar"
             :active="selectedComponent?.id === navigationBarComponent.id"
-            :component="navigationBarComponent"
+            :component="previewComponent(navigationBarComponent)"
             :show-toolbar="false"
             class="cursor-pointer!"
             @click="handleNavigationBarSelected"
@@ -87,7 +91,7 @@
                 :active="selectedComponentIndex === index"
                 :can-move-down="index < pageComponents.length - 1"
                 :can-move-up="index > 0"
-                :component="element"
+                :component="previewComponent(element)"
                 @click="handleComponentSelected(element, index)"
                 @copy="handleCopyComponent(index)"
                 @delete="handleDeleteComponent(index)"
@@ -185,6 +189,7 @@ export default {
 }
 </script>
 <script lang="ts" setup>
+import { getThemeStyles, themePage } from './theme'
 import draggable from 'vuedraggable'
 import ComponentLibrary from './components/ComponentLibrary.vue'
 import { cloneDeep, includes } from 'lodash-es'
@@ -220,6 +225,7 @@ const selectedComponentIndex = ref<number>(-1)
 const pageComponents = ref<DiyComponent<any>[]>([])
 // 定义属性
 const props = defineProps({
+  shopTheme: { type: Object, default: () => ({}) },
   // 页面配置，支持Json字符串
   modelValue: { type: [String, Object] as PropType<string | PageConfig>, required: true },
   // 标题
@@ -235,6 +241,32 @@ const props = defineProps({
   // 预览地址：提供了预览地址，才会显示预览按钮
   previewUrl: { type: String, default: '' }
 })
+
+const previewTheme = computed(() =>
+  props.shopTheme.theme ? props.shopTheme : tabBarComponent.value.property
+)
+const previewFollowsTheme = computed(
+  () => !!previewTheme.value.theme && previewTheme.value.themeConfig?.followTheme !== false
+)
+const previewThemeStyles = computed(() =>
+  previewFollowsTheme.value
+    ? getThemeStyles(
+        previewTheme.value.theme,
+        previewTheme.value.themeConfig,
+        previewTheme.value.previewBackground || pageConfigComponent.value.property.backgroundColor
+      )
+    : {}
+)
+const previewComponent = (component: DiyComponent<any>) =>
+  previewFollowsTheme.value
+    ? {
+        ...component,
+        property: {
+          ...themePage({ components: [component] }).components[0].property,
+          previewBackground: previewTheme.value.previewBackground
+        }
+      }
+    : component
 
 // 兼容历史装修数据：旧版只有 alwaysShow，新增 showType 后统一转成枚举并继续输出 alwaysShow。
 const normalizeNavigationBarProperty = (property: NavigationBarProperty) => {
@@ -616,5 +648,26 @@ $toolbar-height: 42px;
       }
     }
   }
+}
+</style>
+
+<style lang="scss">
+.shop-theme-preview .phone-container {
+  background-color: var(--ui-BG-1) !important;
+  color: var(--ui-TC);
+  line-height: 1.55;
+}
+.shop-theme-preview .phone-container .component > div:first-child,
+.shop-theme-preview .phone-container .bg-white {
+  background: var(--ui-BG) !important;
+  color: var(--ui-TC);
+}
+.shop-theme-preview .phone-container .truncate.text-14px {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  min-height: 40px;
+  overflow: hidden;
 }
 </style>

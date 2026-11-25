@@ -31,6 +31,17 @@
           placeholder="请选择商品分类"
         />
       </el-form-item>
+      <el-form-item label="商品来源" prop="sourceType">
+        <el-select
+          v-model="queryParams.sourceType"
+          class="!w-150px"
+          clearable
+          placeholder="请选择来源"
+        >
+          <el-option label="自有商品" :value="0" />
+          <el-option label="第三方平台" :value="1" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="创建时间" prop="createTime">
         <el-date-picker
           v-model="queryParams.createTime"
@@ -122,6 +133,21 @@
                       <span>{{ row.virtualSalesCount }}</span>
                     </el-form-item>
                   </el-col>
+                  <el-col :span="8">
+                    <el-form-item label="商品来源:">
+                      <span>{{ row.sourceType === 1 ? row.sourcePlatformCode || '第三方平台' : '自有商品' }}</span>
+                      <el-link
+                        v-if="row.sourceUrl"
+                        :href="row.sourceUrl"
+                        class="ml-8px"
+                        rel="noopener noreferrer"
+                        target="_blank"
+                        type="primary"
+                      >
+                        打开来源链接
+                      </el-link>
+                    </el-form-item>
+                  </el-col>
                 </el-row>
               </el-col>
             </el-row>
@@ -144,6 +170,20 @@
                   {{ row.name }}
                 </div>
               </el-tooltip>
+              <div class="mt-4px flex items-center gap-6px">
+                <el-tag size="small" :type="row.sourceType === 1 ? 'warning' : 'info'">
+                  {{ row.sourceType === 1 ? row.sourcePlatformCode || '第三方' : '自有' }}
+                </el-tag>
+                <el-link
+                  v-if="row.sourceUrl"
+                  :href="row.sourceUrl"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  type="primary"
+                >
+                  查看货源
+                </el-link>
+              </div>
             </div>
           </div>
         </template>
@@ -289,6 +329,7 @@ const queryParams = ref({
   tabType: 0,
   name: '',
   categoryId: undefined as number | undefined,
+  sourceType: undefined as number | undefined,
   createTime: undefined
 }) // 查询参数
 const queryFormRef = ref() // 搜索的表单Ref

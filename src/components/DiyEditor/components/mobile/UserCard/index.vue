@@ -2,10 +2,10 @@
   <div class="flex flex-col">
     <div class="flex items-center justify-between p-x-18px p-y-24px">
       <div class="flex flex-1 items-center gap-16px">
-        <el-avatar :size="60">
+        <el-avatar :size="50" src="/static/theme/avatar.svg">
           <Icon icon="ep:avatar" :size="60" />
         </el-avatar>
-        <span class="text-18px font-bold">芋道源码</span>
+        <span class="text-18px font-bold">请先登录</span>
       </div>
       <Icon icon="tdesign:qrcode" :size="20" />
     </div>

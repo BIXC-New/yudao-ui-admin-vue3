@@ -3,6 +3,7 @@
     v-if="formData && !formLoading"
     v-model="currentFormData!.property"
     :libs="libs"
+    :shop-theme="shopTheme"
     :preview-url="previewUrl"
     :show-navigation-bar="selectedTemplateItem !== 0"
     :show-page-config="selectedTemplateItem !== 0"
@@ -60,6 +61,14 @@ const currentFormData = ref<DiyTemplateApi.DiyTemplatePropertyVO | DiyPageApi.Di
 const currentFormDataMap = ref<
   Map<string, DiyTemplateApi.DiyTemplatePropertyVO | DiyPageApi.DiyPageVO>
 >(new Map())
+// 基础设置的主题同步到首页和个人中心编辑预览。
+const shopTheme = computed(() => {
+  const property = formData.value?.property
+  const parsed = typeof property === 'string' ? JSON.parse(property || '{}') : property
+  const home = formData.value?.pages.find((page) => page.name === '??')?.property
+  const homePage = typeof home === 'string' ? JSON.parse(home || '{}') : home
+  return { ...parsed?.tabBar, previewBackground: homePage?.page?.backgroundColor }
+})
 // 商城 H5 预览地址
 const previewUrl = ref('')
 
@@ -119,6 +128,10 @@ const submitForm = async () => {
   // 提交请求
   formLoading.value = true
   try {
+    currentFormDataMap.value.set(
+      templateItems[selectedTemplateItem.value].name,
+      currentFormData.value!
+    )
     // 对所有的 templateItems 都进行保存，有缓存则保存缓存，解决都有修改时只保存了当前所编辑的 templateItem，导致装修效果存在差异
     for (let i = 0; i < templateItems.length; i++) {
       const data = currentFormDataMap.value.get(templateItems[i].name) as any
@@ -130,7 +143,7 @@ const submitForm = async () => {
       }
       // 提交页面属性
       // 情况二：提交当前正在编辑的页面
-      if (currentFormData.value?.name.includes(templateItems[i].name)) {
+      if (currentFormData.value?.name?.includes(templateItems[i].name)) {
         await DiyPageApi.updateDiyPageProperty(unref(currentFormData)!)
         continue
       }
@@ -169,12 +182,10 @@ const DIY_PAGE_INDEX_KEY = 'diy_page_index'
 
 // 1. 记录
 function storePageIndex() {
-  debugger
   return sessionStorage.setItem(DIY_PAGE_INDEX_KEY, `${selectedTemplateItem.value}`)
 }
 // 2. 恢复
 const recoverPageIndex = () => {
-  debugger
   // 恢复重置前的页面，默认是第一个页面
   const pageIndex = toNumber(sessionStorage.getItem(DIY_PAGE_INDEX_KEY)) || 0
   // 移除标记

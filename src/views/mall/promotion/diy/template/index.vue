@@ -41,6 +41,13 @@
         >
           <Icon icon="ep:plus" class="mr-5px" /> 新增
         </el-button>
+        <el-button
+          type="primary"
+          plain
+          @click="importRef.open()"
+          v-hasPermi="['promotion:diy-template:create']"
+          ><Icon icon="ep:upload" class="mr-5px" />导入 ZIP</el-button
+        >
       </el-form-item>
     </el-form>
   </ContentWrap>
@@ -76,7 +83,7 @@
         :formatter="dateFormatter"
         width="180px"
       />
-      <el-table-column label="操作" align="center" width="200">
+      <el-table-column label="操作" align="center" width="260">
         <template #default="scope">
           <el-button
             link
@@ -94,6 +101,15 @@
           >
             编辑
           </el-button>
+          <el-button
+            link
+            type="primary"
+            :loading="downloadingId === scope.row.id"
+            :disabled="downloadingId !== undefined"
+            @click="handleDownload(scope.row)"
+            v-hasPermi="['promotion:diy-template:query']"
+            >下载</el-button
+          >
           <template v-if="!scope.row.used">
             <el-button
               link
@@ -126,9 +142,12 @@
 
   <!-- 表单弹窗：添加/修改 -->
   <DiyTemplateForm ref="formRef" @success="getList" />
+  <DiyImportForm ref="importRef" kind="template" @success="getList" />
 </template>
 
 <script setup lang="ts">
+import DiyImportForm from '../components/DiyImportForm.vue'
+import download from '@/utils/download'
 import { dateFormatter } from '@/utils/formatTime'
 import * as DiyTemplateApi from '@/api/mall/promotion/diy/template'
 import DiyTemplateForm from './DiyTemplateForm.vue'
@@ -140,6 +159,18 @@ defineOptions({ name: 'DiyTemplate' })
 const message = useMessage() // 消息弹窗
 const { t } = useI18n() // 国际化
 
+const importRef = ref()
+const downloadingId = ref<number>()
+const handleDownload = async (row: DiyTemplateApi.DiyTemplateVO) => {
+  if (!row.id || downloadingId.value !== undefined) return
+  downloadingId.value = row.id
+  try {
+    const data = await DiyTemplateApi.exportDiyTemplate(row.id)
+    download.zip(data, row.name + '.zip')
+  } finally {
+    downloadingId.value = undefined
+  }
+}
 const loading = ref(true) // 列表的加载中
 const total = ref(0) // 列表的总页数
 const list = ref<DiyTemplateApi.DiyTemplateVO[]>([]) // 列表的数据

@@ -41,6 +41,13 @@
         >
           <Icon icon="ep:plus" class="mr-5px" /> 新增
         </el-button>
+        <el-button
+          type="primary"
+          plain
+          @click="importRef.open()"
+          v-hasPermi="['promotion:diy-page:create']"
+          ><Icon icon="ep:upload" class="mr-5px" />导入 ZIP</el-button
+        >
       </el-form-item>
     </el-form>
   </ContentWrap>
@@ -111,9 +118,11 @@
 
   <!-- 表单弹窗：添加/修改 -->
   <DiyPageForm ref="formRef" @success="getList" />
+  <DiyImportForm ref="importRef" kind="page" @success="getList" />
 </template>
 
 <script setup lang="ts">
+import DiyImportForm from '../components/DiyImportForm.vue'
 import { dateFormatter } from '@/utils/formatTime'
 import * as DiyPageApi from '@/api/mall/promotion/diy/page'
 import DiyPageForm from './DiyPageForm.vue'
@@ -124,6 +133,7 @@ defineOptions({ name: 'DiyPage' })
 const message = useMessage() // 消息弹窗
 const { t } = useI18n() // 国际化
 
+const importRef = ref()
 const loading = ref(true) // 列表的加载中
 const total = ref(0) // 列表的总页数
 const list = ref([]) // 列表的数据

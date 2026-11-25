@@ -16,6 +16,7 @@ export interface Sku {
   marketPrice?: number | string // 市场价
   costPrice?: number | string // 成本价
   barCode?: string // 商品条码
+  sourceSkuId?: string // 第三方平台 SKU 编号
   picUrl?: string // 图片地址
   stock?: number // 库存
   weight?: number // 商品重量，单位：kg 千克
@@ -58,6 +59,35 @@ export interface Spu {
   stock?: number // 商品库存
   createTime?: Date // 商品创建时间
   status?: number // 商品状态
+  sourceType?: number // 商品来源类型：0=自有商品，1=第三方平台
+  sourcePlatformId?: number // 第三方平台配置编号
+  sourcePlatformCode?: string // 第三方平台标识
+  sourceProductId?: string // 第三方平台商品编号
+  sourceUrl?: string // 商品来源 URL
+}
+
+export interface SpuImportReqVO {
+  platformId: number
+  sourceUrl: string
+  downloadImages?: boolean
+}
+
+export interface SpuImportRespVO {
+  sourceType?: number
+  sourcePlatformId?: number
+  sourcePlatformCode?: string
+  sourceProductId?: string
+  sourceUrl?: string
+  name?: string
+  keyword?: string
+  introduction?: string
+  description?: string
+  picUrl?: string
+  sliderPicUrls?: string[]
+  specType?: boolean
+  skus?: Sku[]
+  duplicateSpuId?: number
+  duplicateSpuName?: string
 }
 
 // 获得 Spu 列表
@@ -108,4 +138,9 @@ export const exportSpu = async (params: any) => {
 // 获得商品 SPU 精简列表
 export const getSpuSimpleList = async () => {
   return request.get({ url: '/product/spu/list-all-simple' })
+}
+
+// 从第三方平台采集商品信息（预览回填）
+export const importPreviewSpu = (data: SpuImportReqVO): Promise<SpuImportRespVO> => {
+  return request.post({ url: '/product/spu/import-preview', data })
 }

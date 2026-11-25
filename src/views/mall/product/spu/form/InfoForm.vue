@@ -57,6 +57,57 @@
     <el-form-item label="商品轮播图" prop="sliderPicUrls">
       <UploadImgs v-model="sliderPicUrls" :disabled="isDetail" />
     </el-form-item>
+    <el-form-item label="商品来源" prop="sourceType">
+      <el-radio-group v-model="formData.sourceType">
+        <el-radio :value="0">自有商品</el-radio>
+        <el-radio :value="1">第三方平台</el-radio>
+      </el-radio-group>
+    </el-form-item>
+    <template v-if="formData.sourceType === 1 || formData.sourceUrl">
+      <el-form-item label="来源平台" prop="sourcePlatformId">
+        <el-select
+          v-model="formData.sourcePlatformId"
+          class="w-80!"
+          clearable
+          placeholder="可选：选择第三方货源平台配置"
+          @change="handleSourcePlatformChange"
+        >
+          <el-option
+            v-for="item in sourcePlatformList"
+            :key="item.id"
+            :label="item.name"
+            :value="item.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="第三方商品编号" prop="sourceProductId">
+        <el-input
+          v-model="formData.sourceProductId"
+          class="w-80!"
+          clearable
+          placeholder="可选：第三方商品 ID（如 1688 offerId）"
+        />
+      </el-form-item>
+      <el-form-item label="商品来源 URL" prop="sourceUrl">
+        <div class="flex items-center gap-8px">
+          <el-input
+            v-model="formData.sourceUrl"
+            class="w-80!"
+            clearable
+            placeholder="请输入原商品页面链接，方便后台人员溯源定位"
+          />
+          <el-link
+            v-if="formData.sourceUrl"
+            :href="formData.sourceUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            type="primary"
+          >
+            打开原商品
+          </el-link>
+        </div>
+      </el-form-item>
+    </template>
   </el-form>
 </template>
 <script lang="ts" setup>
@@ -69,6 +120,7 @@ import * as ProductCategoryApi from '@/api/mall/product/category'
 import { CategoryVO } from '@/api/mall/product/category'
 import * as ProductBrandApi from '@/api/mall/product/brand'
 import { BrandVO } from '@/api/mall/product/brand'
+import * as SourcePlatformApi from '@/api/mall/product/sourcePlatform'
 import { RefreshRight } from '@element-plus/icons-vue'
 
 defineOptions({ name: 'ProductSpuInfoForm' })
@@ -90,7 +142,12 @@ const formData = reactive<Spu>({
   picUrl: '', // 商品封面图
   sliderPicUrls: [], // 商品轮播图
   introduction: '', // 商品简介
-  brandId: undefined // 商品品牌
+  brandId: undefined, // 商品品牌
+  sourceType: 0, // 商品来源类型
+  sourcePlatformId: undefined,
+  sourcePlatformCode: '',
+  sourceProductId: '',
+  sourceUrl: ''
 })
 const sliderPicUrls = computed({
   get: () => formData.sliderPicUrls || [],
@@ -141,6 +198,13 @@ defineExpose({ validate })
 /** 初始化 */
 const brandList = ref<BrandVO[]>([]) // 商品品牌列表
 const categoryList = ref<CategoryVO[]>([]) // 商品分类树
+const sourcePlatformList = ref<SourcePlatformApi.SourcePlatformSimpleVO[]>([]) // 货源平台列表
+
+const handleSourcePlatformChange = (platformId?: number) => {
+  const matched = sourcePlatformList.value.find((item) => item.id === platformId)
+  formData.sourcePlatformCode = matched?.platformCode || ''
+}
+
 async function refreshCategoryList() {
   // 获得分类树
   const data = await ProductCategoryApi.getCategoryList({})
@@ -155,5 +219,6 @@ onMounted(async () => {
   await refreshCategoryList()
   // 获取商品品牌列表
   await refreshBrandList()
+  sourcePlatformList.value = await SourcePlatformApi.getSimpleSourcePlatformList()
 })
 </script>

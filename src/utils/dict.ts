@@ -207,6 +207,9 @@ export enum DICT_TYPE {
 
   // ========== MALL - 商品模块 ==========
   PRODUCT_SPU_STATUS = 'product_spu_status', //商品状态
+  PRODUCT_SOURCE_TYPE = 'product_source_type', // 商品来源类型
+  PRODUCT_SOURCE_PLATFORM = 'product_source_platform', // 第三方货源平台
+  PRODUCT_SOURCE_FETCH_MODE = 'product_source_fetch_mode', // 货源采集方式
 
   // ========== MALL - 交易模块 ==========
   EXPRESS_CHARGE_MODE = 'trade_delivery_express_charge_mode', //快递的计费方式

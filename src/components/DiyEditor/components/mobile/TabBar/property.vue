@@ -19,6 +19,22 @@
           </el-option>
         </el-select>
       </el-form-item>
+      <el-form-item label="页面配色">
+        <el-select v-model="formData.themeConfig!.mode">
+          <el-option label="自动" value="auto" />
+          <el-option label="浅色" value="light" />
+          <el-option label="深色" value="dark" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="自定义主色">
+        <ColorInput v-model="formData.themeConfig!.primaryColor" />
+      </el-form-item>
+      <el-form-item label="跟随主题">
+        <el-switch v-model="formData.themeConfig!.followTheme" />
+        <div class="text-12px text-gray-500"
+          >页面背景、文字、价格及按钮统一跟随主题；关闭后使用各组件装修颜色。</div
+        >
+      </el-form-item>
       <el-form-item label="默认颜色">
         <ColorInput v-model="formData!.style.color" />
       </el-form-item>
@@ -88,11 +104,21 @@ const props = defineProps<{ modelValue: TabBarProperty }>()
 const emit = defineEmits(['update:modelValue'])
 const formData = useVModel(props, 'modelValue', emit)
 
+watch(
+  () => formData.value,
+  (value) => {
+    if (!value.themeConfig)
+      value.themeConfig = { mode: 'auto', primaryColor: '', followTheme: true }
+  },
+  { immediate: true }
+)
+
 // 将数据库的值更新到右侧属性栏
 component.property.items = formData.value.items
 
 // 要的主题
 const handleThemeChange = () => {
+  formData.value.themeConfig!.primaryColor = ''
   const theme = THEME_LIST.find((theme) => theme.id === formData.value.theme)
   if (theme?.color) {
     formData.value.style.activeColor = theme.color

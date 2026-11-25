@@ -56,3 +56,7 @@ export const getDiyTemplateProperty = async (id: number) => {
 export const updateDiyTemplateProperty = async (data: DiyTemplateVO) => {
   return await request.put({ url: `/promotion/diy-template/update-property`, data })
 }
+
+// 下载可重新导入的装修模板包
+export const exportDiyTemplate = (id: number) =>
+  request.download<Blob>({ url: '/promotion/diy-template/export', params: { id } })

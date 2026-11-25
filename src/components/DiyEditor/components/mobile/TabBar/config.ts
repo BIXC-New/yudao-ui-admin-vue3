@@ -2,6 +2,12 @@ import { DiyComponent } from '@/components/DiyEditor/util'
 
 /** 底部导航菜单属性 */
 export interface TabBarProperty {
+  // 可选扩展存入原装修 JSON，旧模板自动按主题选择明暗模式。
+  themeConfig?: {
+    mode?: 'auto' | 'light' | 'dark'
+    primaryColor?: string
+    followTheme?: boolean
+  }
   // 选项列表
   items: TabBarItemProperty[]
   // 主题
@@ -79,6 +85,7 @@ export const component = {
 } as DiyComponent<TabBarProperty>
 
 export const THEME_LIST = [
+  { id: 'blackGold', name: '香槟黑金', icon: 'icon-park-twotone:theme', color: '#d6b982' },
   { id: 'red', name: '中国红', icon: 'icon-park-twotone:theme', color: '#d10019' },
   { id: 'orange', name: '桔橙', icon: 'icon-park-twotone:theme', color: '#f37b1d' },
   { id: 'gold', name: '明黄', icon: 'icon-park-twotone:theme', color: '#fbbd08' },
